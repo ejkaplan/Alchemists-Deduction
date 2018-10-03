@@ -35,6 +35,7 @@ class alchemists_game(object):
     def __init__(self):
         self.ingredients = {ing:alchemics.copy() for ing in ingredients}
         self.data = []
+        self.done = False
 
     def potion(self, ing_a, ing_b, result):
         if ing_a not in ingredients or ing_b not in ingredients:
@@ -218,19 +219,20 @@ class alchemists_game(object):
                 break
             
     def play(self):
-        while True:
+        while not self.done:
             print("----")
             print(self)
             self.main_menu()
             
     def main_menu(self):
         options = {"p":self.potion_menu, "g":self.golem_menu, "e":self.book_menu,
-                   "s":self.periscope_menu, "h":self.history_menu}
+                   "s":self.periscope_menu, "h":self.history_menu, "q":self.quit_menu}
         print("[P]otion")
         print("[G]olem")
         print("[E]ncyclopaedia")
         print("Peri[s]cope")
         print("[H]istory")
+        print("[Q]uit")
         choice = ""
         while len(choice) == 0 or choice[0] not in options:
             choice = input("What will you do?\n").lower()
@@ -238,6 +240,12 @@ class alchemists_game(object):
             options[choice[0]]()
         except:
             print("Whoops - looks like you did something wrong.")
+            
+    def quit_menu(self):
+        choice = input("Are you sure that you want to quit? (y/n)\n")
+        if choice[0].lower() == "y":
+            print("Bye!")
+            self.done = True
         
     def potion_menu(self):
         print("Enter the numbers of your two ingredients separated by a space.")
@@ -293,6 +301,7 @@ class alchemists_game(object):
             return f"Fed {exp[1]} to the golem and {('the ears steamed' + (' and ' if exp[3] else '')) if exp[2] else ''}{'the chest glowed' if exp[3] else ''}{'nothing happened' if not (exp[2] or exp[3]) else ''}"
         elif exp[0] == "periscope":
             return f"Spied someone using {exp[1]} to make {exp[2]}"
-    
-alc = alchemists_game()
-alc.play()
+
+if __name__ == "__main__":
+    alc = alchemists_game()
+    alc.play()
