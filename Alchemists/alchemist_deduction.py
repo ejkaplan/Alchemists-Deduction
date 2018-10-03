@@ -1,6 +1,18 @@
 from copy import deepcopy
 
+
 def potion(alc_a, alc_b):
+    '''
+    Determines the result of mixing two alchemics
+    
+    Args:
+        alc_a (str): the first alchemic being mixed
+        alc_b (str): the second alchemic being mixed
+        
+    Returns:
+        str: the potion created, which will be of the form [color][sign], like "R+" or "G-".
+            might also be "N" if neutral
+    '''
     for i in range(3):
         a = alc_a[2 * i:2 * i + 2]
         b = alc_b[2 * i:2 * i + 2]
@@ -8,7 +20,19 @@ def potion(alc_a, alc_b):
             return f"{a[0].upper()}{a[1]}"
     return "N"
 
+
 def valid(alc_a, alc_b, result):
+    '''
+    Evaluates if a given result is a possible combination of two (potentially incomplete) alchemics.
+    
+    Args:
+        alc_a (str): The first alchemic, with _ substituted for unknown parts.
+        alc_b (str): Second alchemic, same format
+        result (str): The result, of the form [color][sign], like "R+" or "G-" or "N"
+        
+    Returns:
+        bool: Whether or not this pair of alchemics could possibly create the result
+    '''
     result = result.upper()
     if result == "N":
         poss = ["N"]
@@ -23,8 +47,10 @@ def valid(alc_a, alc_b, result):
             return True
     return False
 
+
 def reverse_caps(string):
         return string.lower() if string.isupper() else string.upper()
+
 
 alchemics = ["r-g+B-", "r+g-B+", "r+G-b-", "r-G+b+", "R-g-b+", "R+g+b-", "R+G+B+", "R-G-B-"]
 ingredients = ["mushroom", "fern", "toad", "claw", "flower", "mandrake", "scorpion", "feather"]
@@ -37,6 +63,14 @@ class alchemists_game(object):
         self.data = []
 
     def potion(self, ing_a, ing_b, result):
+        '''
+        Adds the fact that you mixed a potion with a particular result to the log
+        
+        Args:
+            ing_a (str): The name of the first ingredient
+            ing_b (str): The name of the second ingredient
+            result (str): The result of the form [color][sign], like "R+" or "G-" or "N"
+        '''
         if ing_a not in ingredients or ing_b not in ingredients:
             raise Exception("Invalid potion")
         exp = ("potion", ing_a, ing_b, result.upper())
@@ -44,6 +78,13 @@ class alchemists_game(object):
         self.deduction()
 
     def periscope(self, ing, result):
+        '''
+        Adds the fact that you peeked at a potion with the periscope to the log
+        
+        Args:
+            ing (str): The name of the ingredient
+            result (str): The result of the form [color][sign], like "R+" or "G-" or "N"
+        '''
         if ing not in ingredients:
             raise Exception("Invalid use of periscope")
         exp = ("periscope", ing, result.upper())
@@ -53,15 +94,41 @@ class alchemists_game(object):
         self.deduction()
 
     def book(self, ing, result):
+        '''
+        Adds the fact that you read a book to the log
+        
+        Args:
+            ing (str): The name of the ingredient
+            result (str): "moon" or "sun" depending on what the book said
+        '''
         self.data.append(("book", ing, 0 if result == "moon" else 1))
         self.deduction()
 
     def golem(self, ing, ears, chest):
+        '''
+        Adds the fact that you tested the golem to the log
+        
+        Args:
+            ing (str): The ingredient you tested on the golem
+            ears (bool): Whether or not the ears steamed
+            chest (bool): Whether or not the chest glowed
+        '''
         exp = ("golem", ing, ears, chest)
         self.data.append(exp)
         self.deduction()
 
     def known(self, ing):
+        '''
+        Assembles what I know about an ingredient, with underscores in the remaining positions.
+        That is, if all possible alchemics for mandrake have a small red element and a minus in the green position,
+        but nothing else is consistent, this will give back "r__-__"
+        
+        Args:
+            ing (str): The ingredient to assemble an alchemic string about
+            
+        Returns:
+            str: A string representing the things I know with 100% certainty about the ingredient
+        '''
         out = list(self.ingredients[ing][0])
         for alc in self.ingredients[ing]:
             for i in range(len(out)):
@@ -70,6 +137,14 @@ class alchemists_game(object):
         return "".join(out)
 
     def known_golem(self):
+        '''
+        Assembles what I know about the golem.
+        
+        Returns:
+            Two lists - a list of molecules that might cause the ears to steam and the molecules
+            that might cause the chest to glow. Uppercase/lowercase indicates whether it's a
+            big element or a small one.
+        '''
         poss_ears = list("RrGgBb")
         poss_chest = list("RrGgBb")
         for ing in ingredients:
@@ -92,6 +167,13 @@ class alchemists_game(object):
         return poss_ears, poss_chest
 
     def animate_golem(self):
+        '''
+        Aggregates everything I know to make a list of ingredients that might animate the
+        golem. Once this is down to just 2 ingredients, you're ready to animate!
+        
+        Returns:
+            A list of strings of the names of the ingredients that could animate the golem.
+        '''
         ears, chest = self.known_golem()
         ears = [f"{x.lower()}{'+' if x.isupper() else '-'}" for x in ears]
         chest = [f"{x.lower()}{'+' if x.isupper() else '-'}" for x in chest]
@@ -118,12 +200,6 @@ class alchemists_game(object):
                     break
         return poss_ing
 
-    def undo(self):
-        self.data.pop(-1)
-        print(f"Removed last data point.")
-        self.reset()
-        self.ingredients = self.deduction()
-
     def reset(self):
         self.ingredients = {ing:alchemics.copy() for ing in ingredients}
 
@@ -135,6 +211,11 @@ class alchemists_game(object):
         return out
 
     def deduction(self, ingredients=None):
+        '''
+        Performs as much deduction as is possible based on the data that has been entered into the log
+        (see previous functions for how to enter information to the log)
+        Doesn't return anything, just stores the information to instance variables.
+        '''
         if not ingredients:
             ingredients = self.ingredients
         self.golem_ears = {ing:None for ing in ingredients}
@@ -144,7 +225,9 @@ class alchemists_game(object):
             ingredients = deepcopy(original)
             # Check all the data
             for exp in self.data:
-                if exp[0] == "potion":  # If it's a mix
+                if exp[0] == "potion":
+                    #For each potion I've mixed, eliminate all alchemics for each ingredient
+                    #That couldn't possibly mix to make this potion.
                     a_possible = set([])
                     b_possible = set([])
                     for a in ingredients[exp[1]]:
@@ -159,24 +242,28 @@ class alchemists_game(object):
                     ingredients[exp[1]] = list(a_possible)
                     ingredients[exp[2]] = list(b_possible)
                 elif exp[0] == "book":
+                    #For each book I've read, eliminate alchemics that don't match what the book told me.
                     possible = set([])
                     for alc in ingredients[exp[1]]:
                         if alc.count("+") % 2 == exp[2]:
                             possible.add(alc)
                     ingredients[exp[1]] = list(possible)
                 elif exp[0] == "periscope":
+                    #For each ingredient i've spied, eliminate inconsistent alchemics
                     possible = set([])
                     for alc in ingredients[exp[1]]:
                         if exp[2] in alc.upper():
                             possible.add(alc)
                     ingredients[exp[1]] = list(possible)
                 elif exp[0] == "golem":
+                    #Register the golem experiments to be dealt with later
                     self.golem_ears[exp[1]] = exp[2]
                     self.golem_chest[exp[1]] = exp[3]
             # Deal with the golem
             ears, chest = self.known_golem()
             ear_poss = {ing:set([]) for ing in ingredients}
             chest_poss = {ing:set([]) for ing in ingredients}
+            # Figure out what ingredients could possibly cause the ear and chest reactions
             for e in ears:
                 for ing in ingredients:
                     if self.golem_ears[ing] == None:
@@ -193,6 +280,7 @@ class alchemists_game(object):
                         for alc in ingredients[ing]:
                             if (c if self.golem_chest[ing] else reverse_caps(c)) in alc:
                                 chest_poss[ing].add(alc)
+            # If an ingredient caused a given reaction, eliminate alchemics that are inconsistent with that reaction
             for ing in ingredients:
                 ingredients[ing] = list(ear_poss[ing].intersection(chest_poss[ing]))
             # Deal with ingredients that have been ruled down to 1 alchemic
@@ -218,6 +306,9 @@ class alchemists_game(object):
                 break
             
     def play(self):
+        '''
+        Runs the game with a text-based interface.
+        '''
         while True:
             print("----")
             print(self)
@@ -293,6 +384,7 @@ class alchemists_game(object):
             return f"Fed {exp[1]} to the golem and {('the ears steamed' + (' and ' if exp[3] else '')) if exp[2] else ''}{'the chest glowed' if exp[3] else ''}{'nothing happened' if not (exp[2] or exp[3]) else ''}"
         elif exp[0] == "periscope":
             return f"Spied someone using {exp[1]} to make {exp[2]}"
+
     
 alc = alchemists_game()
 alc.play()
