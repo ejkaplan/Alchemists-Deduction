@@ -310,6 +310,7 @@ class alchemists_game(object):
         '''
         Runs the game with a text-based interface.
         '''
+        print("Welcome to the Alchemists deduction engine.")
         while not self.done:
             print("----")
             print(self)
